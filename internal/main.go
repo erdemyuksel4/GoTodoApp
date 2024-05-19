@@ -36,6 +36,7 @@ func main() {
 	}
 	repositories := inmemory.NewRepository(db)
 	services := domain.NewService(repositories)
+	//mockService := tests.NewMockService()
 	myServer := http.NewServer(services)
 	myServer.Middleware = middleware.NewMiddleware(services)
 	fmt.Println("Server started on :80")
