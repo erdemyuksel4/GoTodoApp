@@ -20,6 +20,14 @@ func NewTodoMessageHandler(todoMsgServ service.TodoMessageService) *TodoMessageH
 }
 func (t *TodoMessageHandler) GetAll(httpVars core.HttpVariables, params *core.HttpAPIData) {
 	todos, err := t.todoMessageService.GetAll()
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
+
+	for _, todo := range todos {
+		if todo.UserID != user.ID && !user.IsAdmin {
+			httpVars.Writer.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+	}
 	filteredTodos := helpers.Filter(todos, func(todo *entities.TodoMessage) bool {
 		return todo.DeletedAt.IsZero()
 	})
@@ -46,6 +54,11 @@ func (t *TodoMessageHandler) GetById(httpVars core.HttpVariables, params *core.H
 		return
 	}
 
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
+	if todo.UserID != user.ID && !user.IsAdmin {
+		httpVars.Writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
 	bytedTodo, err := json.Marshal(todo)
 	if err != nil {
@@ -56,11 +69,16 @@ func (t *TodoMessageHandler) GetById(httpVars core.HttpVariables, params *core.H
 	httpVars.Writer.Write(bytedTodo)
 }
 func (t *TodoMessageHandler) Create(httpVars core.HttpVariables, params *core.HttpAPIData) {
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
 
 	var todo entities.TodoMessage
 	err := helpers.InterfaceToStruct(params.Body, &todo)
 	if err != nil {
 		http.Error(httpVars.Writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if todo.UserID != user.ID && !user.IsAdmin {
+		httpVars.Writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	err = t.todoMessageService.Create(&todo)
@@ -78,6 +96,12 @@ func (t *TodoMessageHandler) UpdateById(httpVars core.HttpVariables, params *cor
 		return
 	}
 	id := helpers.StrToInt(params.Query)
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
+
+	if todo.UserID != user.ID && !user.IsAdmin {
+		httpVars.Writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	err = t.todoMessageService.UpdateById(id, &todo)
 	if err != nil {
 		http.Error(httpVars.Writer, err.Error(), http.StatusInternalServerError)
@@ -92,6 +116,12 @@ func (t *TodoMessageHandler) Update(httpVars core.HttpVariables, params *core.Ht
 		http.Error(httpVars.Writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
+
+	if todo.UserID != user.ID && !user.IsAdmin {
+		httpVars.Writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	err = t.todoMessageService.Update(&todo)
 	if err != nil {
 		http.Error(httpVars.Writer, err.Error(), http.StatusInternalServerError)
@@ -104,6 +134,12 @@ func (t *TodoMessageHandler) DeleteById(httpVars core.HttpVariables, params *cor
 	todo, err := t.todoMessageService.GetById(id)
 	if err != nil {
 		httpVars.Writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
+
+	if todo.UserID != user.ID && !user.IsAdmin {
+		httpVars.Writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	err = t.todoMessageService.DeleteById(id)
@@ -124,6 +160,12 @@ func (t *TodoMessageHandler) PatchStatus(httpVars core.HttpVariables, params *co
 	todo, err := t.todoMessageService.GetById(id)
 	if err != nil {
 		httpVars.Writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
+
+	if todo.UserID != user.ID && !user.IsAdmin {
+		httpVars.Writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	err = t.todoMessageService.PatchStatus(id, status.Status)

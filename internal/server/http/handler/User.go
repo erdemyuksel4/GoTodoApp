@@ -5,6 +5,7 @@ import (
 	"net/http"
 	core "todoapp/internal/core"
 	helpers "todoapp/internal/core/helpers"
+	jwtHelper "todoapp/internal/core/security/jwt"
 	"todoapp/internal/entities"
 	service "todoapp/internal/service"
 )
@@ -34,6 +35,7 @@ func (h *UserHandler) Login(httpVars core.HttpVariables, params *core.HttpAPIDat
 		httpVars.Writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	helpers.SetCookie(httpVars.Writer, httpVars.Request, usr, "user")
 	bytedTokenString, err := json.Marshal(tokenString)
 	if err != nil {
 		http.Error(httpVars.Writer, err.Error(), http.StatusInternalServerError)

@@ -20,7 +20,14 @@ func NewTodoListHandler(todoMsgServ service.TodoListService) *TodoListHandler {
 }
 func (t *TodoListHandler) GetAll(httpVars core.HttpVariables, params *core.HttpAPIData) {
 	todoLists, err := t.TodoListService.GetAll()
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
 
+	for _, todoList := range todoLists {
+		if todoList.UserID != user.ID && !user.IsAdmin {
+			httpVars.Writer.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+	}
 	filteredTodoLists := helpers.Filter(todoLists, func(todo *entities.TodoList) bool {
 		return todo.DeletedAt.IsZero()
 	})
@@ -47,6 +54,11 @@ func (t *TodoListHandler) GetById(httpVars core.HttpVariables, params *core.Http
 		fmt.Println(err)
 		return
 	}
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
+	if todoList.UserID != user.ID && !user.IsAdmin {
+		httpVars.Writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	bytedTodoList, err := json.Marshal(todoList)
 	if err != nil {
 		http.Error(httpVars.Writer, err.Error(), http.StatusInternalServerError)
@@ -60,6 +72,11 @@ func (t *TodoListHandler) Create(httpVars core.HttpVariables, params *core.HttpA
 	err := helpers.InterfaceToStruct(params.Body, &todoList)
 	if err != nil {
 		http.Error(httpVars.Writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
+	if todoList.UserID != user.ID && !user.IsAdmin {
+		httpVars.Writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	err = t.TodoListService.Create(&todoList)
@@ -77,6 +94,11 @@ func (t *TodoListHandler) UpdateById(httpVars core.HttpVariables, params *core.H
 		return
 	}
 	id := helpers.StrToInt(params.Query)
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
+	if todoList.UserID != user.ID && !user.IsAdmin {
+		httpVars.Writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	err = t.TodoListService.UpdateById(id, &todoList)
 	if err != nil {
 		http.Error(httpVars.Writer, err.Error(), http.StatusInternalServerError)
@@ -91,6 +113,11 @@ func (t *TodoListHandler) Update(httpVars core.HttpVariables, params *core.HttpA
 		http.Error(httpVars.Writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
+	if todoList.UserID != user.ID && !user.IsAdmin {
+		httpVars.Writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	err = t.TodoListService.Update(&todoList)
 	if err != nil {
 		http.Error(httpVars.Writer, err.Error(), http.StatusInternalServerError)
@@ -103,6 +130,11 @@ func (t *TodoListHandler) DeleteById(httpVars core.HttpVariables, params *core.H
 	todoList, err := t.TodoListService.GetById(id)
 	if err != nil {
 		httpVars.Writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
+	if todoList.UserID != user.ID && !user.IsAdmin {
+		httpVars.Writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	err = t.TodoListService.DeleteById(id)
@@ -123,6 +155,11 @@ func (t *TodoListHandler) PatchPercentage(httpVars core.HttpVariables, params *c
 	todoList, err := t.TodoListService.GetById(id)
 	if err != nil {
 		httpVars.Writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+	user := helpers.GetCookie[entities.User]("user", httpVars.Writer, httpVars.Request)
+	if todoList.UserID != user.ID && !user.IsAdmin {
+		httpVars.Writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	err = t.TodoListService.PatchPercentage(id, percentage.percentage)
