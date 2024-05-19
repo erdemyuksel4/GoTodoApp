@@ -1,0 +1,43 @@
+go 1.22.3
+
+use ./
+
+use ./internal
+
+
+
+use ./internal/entities
+
+
+use ./internal/storage/
+use ./internal/storage/in_memory
+use ./internal/storage/in_memory/TodoList
+use ./internal/storage/in_memory/TodoMessage
+use ./internal/storage/in_memory/User
+
+
+
+use ./internal/core
+use ./internal/core/Helpers
+use ./internal/core/Security
+use ./internal/core/Security/Jwt
+
+
+use ./internal/server
+use ./internal/server/middleware
+use ./internal/server/middleware/Token
+use ./internal/server/http
+use ./internal/server/http/handler
+
+
+use ./internal/service
+use ./internal/service/domain
+use ./internal/service/domain/User
+use ./internal/service/domain/TodoMessage
+use ./internal/service/domain/TodoList
+
+use ./internal/tests
+use ./internal/tests/TodoMessage
+use ./internal/tests/TodoList
+use ./internal/tests/User
+
