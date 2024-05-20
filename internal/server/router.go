@@ -38,9 +38,8 @@ type Server struct {
 }
 
 type TokenHandler interface {
-	Auth(httpVars core.HttpVariables, params *core.HttpAPIData)
+	Auth(httpVars core.HttpVariables, params *core.HttpAPIData) bool
 }
 type Middleware struct {
-	TokenHandler         TokenHandler
-	AuthorizationHandler AuthorizationHandler
+	TokenHandler TokenHandler
 }

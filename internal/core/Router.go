@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func Route(pattern string, handler func(HttpVariables, *HttpAPIData), urlPattern UrlPattern, mux *http.ServeMux, middleware ...func(HttpVariables, *HttpAPIData)) {
+func Route(pattern string, handler func(HttpVariables, *HttpAPIData), urlPattern UrlPattern, mux *http.ServeMux, middleware ...func(HttpVariables, *HttpAPIData) bool) {
 
 	mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		httpVars := HttpVariables{Writer: w, Request: r, UrlPattern: urlPattern}
@@ -12,7 +12,10 @@ func Route(pattern string, handler func(HttpVariables, *HttpAPIData), urlPattern
 		httpVars = HttpVariables{Writer: w, Request: r, pattern: pattern, UrlPattern: urlPattern}
 		if middleware != nil {
 			for _, m := range middleware {
-				m(httpVars, params)
+				res := m(httpVars, params)
+				if !res {
+					return
+				}
 			}
 		}
 		handler(httpVars, params)
